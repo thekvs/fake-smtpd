@@ -1,0 +1,15 @@
+[package]
+name = "fake-smtpd"
+version = "0.1.0"
+authors = ["Konstantin Sorokin <kvs@sigterm.ru>"]
+
+[dependencies]
+clap = "2.31"
+log = "0.4"
+env_logger = "0.5"
+failure = "0.1"
+threadpool = "1.7"
+regex = "1"
+lazy_static = "1.1"
+rand = "0.5"
+ctrlc = "3.1"
