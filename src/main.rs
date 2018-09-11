@@ -138,7 +138,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
-    }).expect("Error setting Ctrl-C handler");
+    })?;
 
     // Accept and process connections in separate thread
     thread::spawn(move || loop {
