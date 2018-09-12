@@ -4,8 +4,9 @@ use regex::Regex;
 use std::io::Read;
 
 mod command;
+
 pub mod reply;
-mod state;
+pub mod state;
 
 use self::command::*;
 use self::reply::*;
@@ -130,8 +131,8 @@ impl Protocol {
             "HELO" if self.state == State::Rcpt => self.helo(),
             "MAIL" if self.state == State::Mail => self.mail(&command),
             "RCPT" if self.state == State::Rcpt => self.rcpt(&command),
-            "DATA" if self.state == State::Rcpt => self.data(),
-            _ => Reply::unknown_command(),
+            "DATA" if self.state == State::Rcpt && !self.recipients.is_empty() => self.data(),
+            _ => self.invalid_command(),
         }
     }
 
@@ -139,6 +140,10 @@ impl Protocol {
         self.message.clear();
         self.recipients.clear();
         self.from.clear();
+    }
+
+    fn invalid_command(&mut self) -> Reply {
+        Reply::unknown_command()
     }
 
     fn ehlo(&mut self) -> Reply {

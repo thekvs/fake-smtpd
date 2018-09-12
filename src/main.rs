@@ -17,7 +17,7 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::net::TcpListener;
 use std::net::TcpStream;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time;
@@ -29,7 +29,22 @@ use threadpool::ThreadPool;
 mod proto;
 
 use proto::reply::*;
+use proto::state::*;
 use proto::*;
+
+struct Stat {
+    accepted: AtomicUsize,
+    rejected: AtomicUsize,
+}
+
+impl Stat {
+    fn new() -> Self {
+        Stat {
+            accepted: AtomicUsize::new(0),
+            rejected: AtomicUsize::new(0),
+        }
+    }
+}
 
 fn write_reply<W>(writer: &mut W, reply: &Reply) -> Result<(), Error>
 where
@@ -41,7 +56,7 @@ where
     Ok(())
 }
 
-fn handle_connection(stream: TcpStream, reject_ratio: f32) {
+fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
     let peer_addr = match stream.peer_addr() {
         Ok(peer_addr) => peer_addr,
         Err(err) => {
@@ -72,15 +87,20 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32) {
                 break;
             }
 
+            let mut status: u16;
+
             {
                 let reply = smtp.process_command(buffer.as_str());
                 if let Err(err) = write_reply(&mut writer, &reply) {
                     error!("{}: {}", peer_addr, err);
                     break;
                 }
-                // if reply.status >= 400 {
-                //     break;
-                // }
+
+                status = reply.status;
+            }
+
+            if smtp.state == State::Rcpt && status > 500 {
+                stat.rejected.fetch_add(1, Ordering::SeqCst);
             }
 
             if smtp.is_data() {
@@ -90,9 +110,11 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32) {
                             error!("{}: {}", peer_addr, err);
                             break;
                         }
-                        // if reply.status >= 400 {
-                        //     break;
-                        // }
+                        if reply.status >= 400 {
+                            stat.rejected.fetch_add(1, Ordering::SeqCst);
+                        } else {
+                            stat.accepted.fetch_add(1, Ordering::SeqCst);
+                        }
                     }
                     Err(err) => {
                         error!("{}: {}", peer_addr, err);
@@ -129,6 +151,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
         bail!("reject ratio coefficient must be between 0 and 1");
     }
 
+    let stat = Arc::new(Stat::new());
     let socket = TcpListener::bind(&addr)?;
     let pool = ThreadPool::new(workers);
 
@@ -141,6 +164,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
     })?;
 
     // Accept and process connections in separate thread
+    let s = stat.clone();
     thread::spawn(move || loop {
         let (stream, _addr) = match socket.accept() {
             Ok(result) => result,
@@ -149,7 +173,8 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
                 break;
             }
         };
-        pool.execute(move || handle_connection(stream, reject_ratio));
+        let s = s.clone();
+        pool.execute(move || handle_connection(stream, reject_ratio, s));
     });
 
     // Monitor if Ctrl-C was pressed
@@ -161,6 +186,11 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
         }
         thread::sleep(sleep_interval);
     }
+
+    println!("--");
+    println!("Accepted: {}", stat.accepted.load(Ordering::SeqCst));
+    println!("Rejected: {}", stat.rejected.load(Ordering::SeqCst));
+    println!("");
 
     Ok(())
 }
