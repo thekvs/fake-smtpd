@@ -7,15 +7,16 @@ extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 extern crate ctrlc;
+extern crate net2;
 extern crate rand;
 extern crate regex;
 extern crate threadpool;
 
+use net2::TcpStreamExt;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::BufWriter;
 use std::io::Write;
-use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -24,6 +25,7 @@ use std::time;
 
 use clap::{App, Arg, ArgMatches};
 use failure::Error;
+use net2::TcpBuilder;
 use threadpool::ThreadPool;
 
 mod proto;
@@ -31,6 +33,9 @@ mod proto;
 use proto::reply::*;
 use proto::state::*;
 use proto::*;
+
+static READ_TIMEOUT_MS: u32 = 1000 * 30;
+static LISTEN_BACKLOG: i32 = 256;
 
 struct Stat {
     accepted: AtomicUsize,
@@ -64,6 +69,11 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
             return;
         }
     };
+
+    if let Err(err) = stream.set_read_timeout_ms(Some(READ_TIMEOUT_MS)) {
+        error!("{}", err);
+        return;
+    }
 
     let mut buffer = String::with_capacity(1024 * 8);
     let mut reader = BufReader::new(&stream);
@@ -159,7 +169,12 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
     }
 
     let stat = Arc::new(Stat::new());
-    let socket = TcpListener::bind(&addr)?;
+
+    let tcp = TcpBuilder::new_v4()?;
+    let listener = tcp
+        .reuse_address(true)?
+        .bind(&addr)?
+        .listen(LISTEN_BACKLOG)?;
     let pool = ThreadPool::new(workers);
 
     // Setup Ctrl-C handling
@@ -173,7 +188,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
     // Accept and process connections in separate thread
     let s = stat.clone();
     thread::spawn(move || loop {
-        let (stream, _addr) = match socket.accept() {
+        let (stream, _addr) = match listener.accept() {
             Ok(result) => result,
             Err(err) => {
                 error!("accept failed: {:?}", err);
