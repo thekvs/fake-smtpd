@@ -90,7 +90,14 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
             let mut status: u16;
 
             {
-                let reply = smtp.process_command(buffer.as_str());
+                let reply = match smtp.process_command(buffer.as_str()) {
+                    Ok(reply) => reply,
+                    Err(err) => {
+                        error!("Error: {}, data: {}", err, buffer);
+                        Reply::unknown_command()
+                    }
+                };
+
                 if let Err(err) = write_reply(&mut writer, &reply) {
                     error!("{}: {}", peer_addr, err);
                     break;

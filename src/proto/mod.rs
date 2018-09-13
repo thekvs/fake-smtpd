@@ -64,10 +64,10 @@ impl Protocol {
         }
     }
 
-    pub fn process_command(&mut self, line: &str) -> Reply {
+    pub fn process_command(&mut self, line: &str) -> Result<Reply, Error> {
         match parse_command(line.trim_right_matches("\r\n")) {
-            Ok(cmd) => self.command(&cmd),
-            Err(_err) => Reply::unknown_command(),
+            Ok(cmd) => Ok(self.command(&cmd)),
+            Err(err) => Err(err),
         }
     }
 
