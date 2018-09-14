@@ -171,7 +171,11 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 
     let stat = Arc::new(Stat::new());
 
-    let tcp = TcpBuilder::new_v4()?;
+    let tcp = match addr.is_ipv4() {
+        true => TcpBuilder::new_v4()?,
+        false => TcpBuilder::new_v6()?,
+    };
+
     let listener = tcp
         .reuse_address(true)?
         .bind(&addr)?
