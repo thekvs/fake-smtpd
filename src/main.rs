@@ -36,6 +36,7 @@ use proto::*;
 
 static READ_TIMEOUT_MS: u32 = 1000 * 30;
 static LISTEN_BACKLOG: i32 = 256;
+static IO_BUFFER_CAPACITY: usize = 1024 * 8;
 
 struct Stat {
     accepted: AtomicUsize,
@@ -75,7 +76,7 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
         return;
     }
 
-    let mut buffer = String::with_capacity(1024 * 8);
+    let mut buffer = String::with_capacity(IO_BUFFER_CAPACITY);
     let mut reader = BufReader::new(&stream);
     let mut writer = BufWriter::new(&stream);
     let mut smtp = Protocol::new();
