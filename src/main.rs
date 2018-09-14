@@ -171,15 +171,17 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 
     let stat = Arc::new(Stat::new());
 
-    let tcp = match addr.is_ipv4() {
-        true => TcpBuilder::new_v4()?,
-        false => TcpBuilder::new_v6()?,
+    let tcp = if addr.is_ipv4() {
+        TcpBuilder::new_v4()?
+    } else {
+        TcpBuilder::new_v6()?
     };
 
     let listener = tcp
         .reuse_address(true)?
         .bind(&addr)?
         .listen(LISTEN_BACKLOG)?;
+
     let pool = ThreadPool::new(workers);
 
     // Setup Ctrl-C handling
@@ -235,8 +237,7 @@ fn main() {
                 .default_value("127.0.0.1:2500")
                 .required(false)
                 .help("Address to listen"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("workers")
                 .short("w")
                 .long("workers")
@@ -244,8 +245,7 @@ fn main() {
                 .default_value("800")
                 .required(false)
                 .help("Number of workers to launch"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("ratio")
                 .short("r")
                 .long("reject-ratio")
@@ -253,8 +253,7 @@ fn main() {
                 .default_value("0")
                 .required(false)
                 .help("Ratio of emails to reject"),
-        )
-        .get_matches();
+        ).get_matches();
 
     if let Err(e) = run(&args) {
         error!("{}", e);
