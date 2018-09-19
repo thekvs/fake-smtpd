@@ -120,6 +120,7 @@ impl Protocol {
             }
             "NOOP" => Reply::ok("Ok"),
             "RSET" => {
+                self.cleanup();
                 self.state = State::Mail;
                 Reply::ok("Ok")
             }
