@@ -216,10 +216,10 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
         thread::sleep(sleep_interval);
     }
 
-    println!("--");
-    println!("Accepted: {}", stat.accepted.load(Ordering::SeqCst));
-    println!("Rejected: {}", stat.rejected.load(Ordering::SeqCst));
-    println!("");
+    println!();
+    println!("Accepted emails: {}", stat.accepted.load(Ordering::SeqCst));
+    println!("Rejected emails: {}", stat.rejected.load(Ordering::SeqCst));
+    println!();
 
     Ok(())
 }
