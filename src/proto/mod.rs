@@ -18,7 +18,8 @@ static INITIAL_MESSAGE_BUFFER_SIZE: usize = 1024 * 4;
 static MAX_EMAIL_SIZE: usize = 73_400_320;
 
 lazy_static! {
-    static ref MAIL_COMMAND_REGEX: Regex = Regex::new("(?i:From):\\s*<(?P<email>[^>]*)>").unwrap();
+    static ref MAIL_COMMAND_REGEX: Regex =
+        Regex::new("(?i:From):\\s*<(?P<email>[^>]*)>(\\s+(?i:Size)=(?P<size>\\d+))?").unwrap();
     static ref RCPT_COMMAND_REGEX: Regex = Regex::new("(?i:To):\\s*<(?P<email>[^>]+)>").unwrap();
     static ref SIZE: String = format!("SIZE {}", MAX_EMAIL_SIZE);
     static ref EHLO_MESSAGE: Vec<&'static str> = vec![HOSTNAME, SIZE.as_str(), "8BITMIME"];
@@ -159,13 +160,31 @@ impl Protocol {
 
     fn mail(&mut self, cmd: &Command) -> Reply {
         self.state = State::Rcpt;
-        let m = MAIL_COMMAND_REGEX
-            .captures(cmd.args.as_str())
-            .and_then(|cap| cap.name("email").map(|email| email.as_str()));
-        match m {
-            Some(address) => {
-                self.from = address.to_string();
-                Reply::ok("Ok")
+        let cap = MAIL_COMMAND_REGEX.captures(cmd.args.as_str());
+
+        match cap {
+            Some(cap) => {
+                let addr = cap.name("email").map(|email| email.as_str());
+                let size = cap.name("size").map(|size| size.as_str());
+                match addr {
+                    Some(address) => {
+                        self.from = address.to_string();
+                        if let Some(size) = size {
+                            let size = size.parse::<usize>();
+                            match size {
+                                Ok(size) if size > MAX_EMAIL_SIZE => Reply::message_too_big(),
+                                Err(err) => {
+                                    error!("'FROM' command parameter parse error: {}", err);
+                                    Reply::unknown_command()
+                                }
+                                _ => Reply::ok("Ok"),
+                            }
+                        } else {
+                            Reply::ok("Ok")
+                        }
+                    }
+                    None => Reply::invalid_address(),
+                }
             }
             None => Reply::invalid_address(),
         }
@@ -203,7 +222,7 @@ mod tests {
     #[test]
     fn mail_command_test1() {
         let mut smtp = Protocol::new();
-        let raw = "mail from: <test@example.com>";
+        let raw = "mail from: <test@example.com> size=432445";
         let cmd = parse_command(raw).unwrap();
         let _ = smtp.mail(&cmd);
         assert_eq!(smtp.from, "test@example.com");
@@ -231,6 +250,17 @@ mod tests {
         assert_eq!(smtp.from, "");
         let reply = smtp.mail(&cmd);
         assert!(reply.status == 250);
+    }
+
+    #[test]
+    fn mail_command_test4() {
+        let mut smtp = Protocol::new();
+        let raw = "mail from: <test@example.com> size=432445768556";
+        let cmd = parse_command(raw).unwrap();
+        let _ = smtp.mail(&cmd);
+        assert_eq!(smtp.from, "test@example.com");
+        let reply = smtp.mail(&cmd);
+        assert!(reply.status == 556);
     }
 
     #[test]
