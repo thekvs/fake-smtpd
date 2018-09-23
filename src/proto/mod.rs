@@ -29,6 +29,7 @@ lazy_static! {
 #[derive(Debug, Default)]
 pub struct Protocol {
     pub message: Vec<u8>,
+    pub buffer: Box<[u8]>,
     pub state: State,
     pub last_command: Command,
     pub from: String,
@@ -41,6 +42,7 @@ impl Protocol {
     pub fn new() -> Self {
         Protocol {
             message: Vec::with_capacity(INITIAL_MESSAGE_BUFFER_SIZE),
+            buffer: vec![0u8; INITIAL_MESSAGE_BUFFER_SIZE].into_boxed_slice(),
             ..Default::default()
         }
     }
@@ -76,16 +78,14 @@ impl Protocol {
     where
         R: Read,
     {
-        let mut buffer = vec![0u8; INITIAL_MESSAGE_BUFFER_SIZE].into_boxed_slice();
-
         loop {
-            if let Ok(bytes_read) = reader.read(&mut *buffer) {
+            if let Ok(bytes_read) = reader.read(&mut *self.buffer) {
                 if bytes_read > 0 {
                     let m = &mut self.message;
                     if m.len() + bytes_read > MAX_EMAIL_SIZE {
                         return Ok(Reply::message_too_big());
                     }
-                    m.extend_from_slice(&(*buffer)[0..bytes_read]);
+                    m.extend_from_slice(&(*self.buffer)[0..bytes_read]);
                     if m.len() >= MESSAGE_BODY_TERMINATOR.len() {
                         let idx = m.len() - MESSAGE_BODY_TERMINATOR.len();
                         if &m[idx..] == MESSAGE_BODY_TERMINATOR {
