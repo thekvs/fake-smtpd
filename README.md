@@ -36,8 +36,11 @@
 	1. Запускаем сервер на стороне *жертвы* (возможно, понадобится запуск от root): `fake-smtpd --address 192.168.1.1:25 --workers 1500 --reject-ratio 1`
 	1. Запускаем утилиту `smtpflood` на клиентах: `smtpflood -address 192.168.1.1:25 -domain mail.ru -duration 30m -workers 500`. При этом важно следить, чтобы общее число worker'ов на клиентах не превосходило число worker'ов на сервере. Также в этом случае желательно перенаправить вывод утилиты `smtpflood` в `/dev/null`.
 
+## Настройка ОС
+
 **Важно!** На стороне запуска утилиты `smtpflood` **необходимо** включить опцию ядра Linux `tcp_tw_reuse`.
 Сделать это можно следующим образом из командной строки: `sudo sysctl -w net.ipv4.tcp_tw_reuse=1`.
-Для того, чтобы данная опция включалась автоматически при загрузке системы, нужно отредактировать файл `/etc/sysctl.conf`.
+Для того, чтобы данная опция включалась автоматически при загрузке системы, нужно отредактировать файл `/etc/sysctl.conf` и добавить в него
+строку `net.ipv4.tcp_tw_reuse=1`.
 
-Подробности см. [здесь](https://stackoverflow.com/questions/8893888/dropping-of-connections-with-tcp-tw-recycle/12719362#12719362)
+Подробности об опции `tcp_tw_reuse` см. [здесь](https://stackoverflow.com/questions/8893888/dropping-of-connections-with-tcp-tw-recycle/12719362#12719362)
