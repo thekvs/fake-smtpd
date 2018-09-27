@@ -6,6 +6,14 @@ use std::fmt;
 //     MANY(Vec<&'a str>),
 // }
 
+static OK_STATUS_CODE: u16 = 250;
+static BYE_STATUS_CODE: u16 = 221;
+static DATA_STATUS_CODE: u16 = 354;
+static UNKNOWN_COMMAND_STATUS_CODE: u16 = 500;
+static INVALID_ADDRESS_STATUS_CODE: u16 = 502;
+static MESSAGE_TOO_BIG_STATUS_CODE: u16 = 556;
+static UNKNOWN_USER_STATUS_CODE: u16 = 550;
+
 #[derive(Debug, Default)]
 pub struct Reply<'a> {
     pub status: u16,
@@ -28,56 +36,56 @@ impl<'a> fmt::Display for Reply<'a> {
 impl<'a> Reply<'a> {
     pub fn ok(message: &'a str) -> Self {
         Reply {
-            status: 250,
+            status: OK_STATUS_CODE,
             lines: vec![message],
         }
     }
 
     pub fn ok_many(messages: Vec<&'a str>) -> Self {
         Reply {
-            status: 250,
+            status: OK_STATUS_CODE,
             lines: messages,
         }
     }
 
     pub fn bye() -> Self {
         Reply {
-            status: 221,
+            status: BYE_STATUS_CODE,
             lines: vec!["Bye"],
         }
     }
 
     pub fn data() -> Self {
         Reply {
-            status: 354,
+            status: DATA_STATUS_CODE,
             lines: vec!["End data with <CR><LF>.<CR><LF>"],
         }
     }
 
     pub fn unknown_command() -> Self {
         Reply {
-            status: 500,
+            status: UNKNOWN_COMMAND_STATUS_CODE,
             lines: vec!["Invalid or out of order command"],
         }
     }
 
     pub fn invalid_address() -> Self {
         Reply {
-            status: 502,
+            status: INVALID_ADDRESS_STATUS_CODE,
             lines: vec!["Malformed email address"],
         }
     }
 
     pub fn message_too_big() -> Self {
         Reply {
-            status: 556,
+            status: MESSAGE_TOO_BIG_STATUS_CODE,
             lines: vec!["Message size exceeds maximum allowed"],
         }
     }
 
     pub fn unknown_user() -> Self {
         Reply {
-            status: 550,
+            status: UNKNOWN_USER_STATUS_CODE,
             lines: vec!["User unknown"],
         }
     }
