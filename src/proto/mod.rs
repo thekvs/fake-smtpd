@@ -16,6 +16,7 @@ static HOSTNAME: &'static str = "fakesmtpd";
 static MESSAGE_BODY_TERMINATOR: &'static [u8] = &[b'\r', b'\n', b'.', b'\r', b'\n'];
 static INITIAL_MESSAGE_BUFFER_SIZE: usize = 1024 * 1024;
 static MAX_EMAIL_SIZE: usize = 73_400_320;
+static MAX_RECIPIENTS_COUNT: usize = 500;
 
 lazy_static! {
     static ref MAIL_COMMAND_REGEX: Regex =
@@ -196,12 +197,16 @@ impl Protocol {
             .captures(cmd.args.as_str())
             .and_then(|cap| cap.name("email").map(|email| email.as_str()));
         match m {
-            Some(address) => {
+            Some(_address) if self.recipients.len() >= MAX_RECIPIENTS_COUNT => {
+                Reply::too_many_recipients()
+            }
+            Some(_address)
                 if self.reject_ratio > 0f32
-                    && (self.reject_ratio >= 1f32 || random::<f32>() >= self.reject_ratio)
-                {
-                    return Reply::unknown_user();
-                }
+                    && (self.reject_ratio >= 1f32 || random::<f32>() >= self.reject_ratio) =>
+            {
+                Reply::unknown_user()
+            }
+            Some(address) => {
                 self.recipients.push(address.to_string());
                 Reply::ok("Ok")
             }

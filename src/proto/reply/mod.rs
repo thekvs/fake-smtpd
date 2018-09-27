@@ -13,6 +13,7 @@ static UNKNOWN_COMMAND_STATUS_CODE: u16 = 500;
 static INVALID_ADDRESS_STATUS_CODE: u16 = 502;
 static MESSAGE_TOO_BIG_STATUS_CODE: u16 = 556;
 static UNKNOWN_USER_STATUS_CODE: u16 = 550;
+static TOO_MANY_RECIPIENTS_STATUS_CODE: u16 = 452;
 
 #[derive(Debug, Default)]
 pub struct Reply<'a> {
@@ -87,6 +88,13 @@ impl<'a> Reply<'a> {
         Reply {
             status: UNKNOWN_USER_STATUS_CODE,
             lines: vec!["User unknown"],
+        }
+    }
+
+    pub fn too_many_recipients() -> Self {
+        Reply {
+            status: TOO_MANY_RECIPIENTS_STATUS_CODE,
+            lines: vec!["Too many recipients"],
         }
     }
 }
