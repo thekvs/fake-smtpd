@@ -237,6 +237,7 @@ fn main() {
                 .long("address")
                 .takes_value(true)
                 .default_value("127.0.0.1:2500")
+                .value_name("addr")
                 .required(false)
                 .help("Address to listen"),
         )
@@ -246,6 +247,7 @@ fn main() {
                 .long("workers")
                 .takes_value(true)
                 .default_value("800")
+                .value_name("num")
                 .required(false)
                 .help("Number of workers to launch"),
         )
@@ -255,8 +257,9 @@ fn main() {
                 .long("reject-ratio")
                 .takes_value(true)
                 .default_value("0")
+                .value_name("num")
                 .required(false)
-                .help("Ratio of emails to reject"),
+                .help("Ratio of emails to reject. Must be between 0 and 1"),
         )
         .get_matches();
 
