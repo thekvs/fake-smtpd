@@ -30,9 +30,9 @@ use threadpool::ThreadPool;
 
 mod proto;
 
-use proto::reply::*;
-use proto::state::*;
-use proto::*;
+use crate::proto::reply::*;
+use crate::proto::state::*;
+use crate::proto::*;
 
 static READ_TIMEOUT_MS: u32 = 1000 * 30;
 static LISTEN_BACKLOG: i32 = 256;
