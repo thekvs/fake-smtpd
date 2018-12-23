@@ -23,7 +23,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time;
 
-use clap::{App, Arg, ArgMatches};
+use clap::{crate_authors, crate_version, App, Arg, ArgMatches};
 use failure::Error;
 use net2::TcpBuilder;
 use threadpool::ThreadPool;
@@ -227,8 +227,10 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 fn main() {
     env_logger::init();
 
-    let args = App::new("Fake SMTP server")
-        .author("Konstantin Sorokin <kvs@sigterm.ru>")
+    let args = App::new(env!("CARGO_PKG_NAME"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
+        .author(crate_authors!())
+        .version(crate_version!())
         .arg(
             Arg::with_name("address")
                 .short("a")
@@ -237,7 +239,8 @@ fn main() {
                 .default_value("127.0.0.1:2500")
                 .required(false)
                 .help("Address to listen"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("workers")
                 .short("w")
                 .long("workers")
@@ -245,7 +248,8 @@ fn main() {
                 .default_value("800")
                 .required(false)
                 .help("Number of workers to launch"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("ratio")
                 .short("r")
                 .long("reject-ratio")
@@ -253,7 +257,8 @@ fn main() {
                 .default_value("0")
                 .required(false)
                 .help("Ratio of emails to reject"),
-        ).get_matches();
+        )
+        .get_matches();
 
     if let Err(e) = run(&args) {
         error!("{}", e);
