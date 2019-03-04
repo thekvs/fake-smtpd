@@ -69,7 +69,7 @@ impl Protocol {
     }
 
     pub fn process_command(&mut self, line: &str) -> Result<Reply, Error> {
-        match parse_command(line.trim_right_matches("\r\n")) {
+        match parse_command(line.trim_end_matches("\r\n")) {
             Ok(cmd) => Ok(self.command(&cmd)),
             Err(err) => Err(err),
         }
