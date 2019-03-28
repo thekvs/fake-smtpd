@@ -16,3 +16,6 @@ lazy_static = "1.2.0"
 rand = "0.6.5"
 ctrlc = "3.1.1"
 net2 = "0.2.33"
+
+[profile.release]
+lto = true
