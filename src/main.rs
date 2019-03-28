@@ -98,7 +98,7 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
                 break;
             }
 
-            let mut status: u16;
+            let status: u16;
 
             {
                 let reply = match smtp.process_command(buffer.as_str()) {
