@@ -12,8 +12,8 @@ use self::command::*;
 use self::reply::*;
 use self::state::*;
 
-static HOSTNAME: &'static str = "fakesmtpd";
-static MESSAGE_BODY_TERMINATOR: &'static [u8] = &[b'\r', b'\n', b'.', b'\r', b'\n'];
+static HOSTNAME: &str = "fakesmtpd";
+static MESSAGE_BODY_TERMINATOR: &[u8] = &[b'\r', b'\n', b'.', b'\r', b'\n'];
 static INITIAL_MESSAGE_BUFFER_SIZE: usize = 1024 * 1024;
 static MAX_EMAIL_SIZE: usize = 73_400_320;
 static MAX_RECIPIENTS_COUNT: usize = 500;
