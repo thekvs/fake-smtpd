@@ -26,10 +26,10 @@ check_env:
 		exit 1; \
 	fi
 
-build: check_env
+build:
 	cargo build --release
 
-deb: clean build
+deb: check_env clean build
 	mkdir -p $(INSTALLDIR)/usr/local/bin/
 	cp -a ./target/release/fake-smtpd $(INSTALLDIR)/usr/local/bin/
 	fpm --input-type dir \
