@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::{anyhow, Error};
 
 #[derive(Debug, Default)]
 pub struct Command {
@@ -11,7 +11,7 @@ pub fn parse_command(line: &str) -> Result<Command, Error> {
     let items: Vec<&str> = line.split_whitespace().collect();
 
     if items.is_empty() {
-        bail!("invalid command")
+        Err(anyhow!("invalid command"))
     } else {
         let cmd = Command {
             verb: items[0].to_uppercase(),

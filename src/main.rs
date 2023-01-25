@@ -3,8 +3,6 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate lazy_static;
 extern crate ctrlc;
 extern crate net2;
@@ -23,8 +21,8 @@ use std::sync::Arc;
 use std::thread;
 use std::time;
 
+use anyhow::{anyhow, Error};
 use clap::{crate_authors, crate_version, App, Arg, ArgMatches};
-use failure::Error;
 use net2::TcpBuilder;
 use threadpool::ThreadPool;
 
@@ -156,7 +154,7 @@ fn handle_connection(stream: TcpStream, reject_ratio: f32, stat: Arc<Stat>) {
 fn run(matches: &ArgMatches) -> Result<(), Error> {
     let workers = matches.value_of("workers").unwrap().parse::<usize>()?;
     if workers < 1 {
-        bail!("number of workers can't be zero");
+        return Err(anyhow!("number of workers can't be zero"));
     }
 
     let addr = matches
@@ -166,7 +164,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 
     let reject_ratio = matches.value_of("ratio").unwrap().parse::<f32>()?;
     if reject_ratio < 0f32 || reject_ratio > 1f32 {
-        bail!("reject ratio coefficient must be between 0 and 1");
+        return Err(anyhow!("reject ratio coefficient must be between 0 and 1"));
     }
 
     let stat = Arc::new(Stat::new());

@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::{anyhow, Error};
 use rand::prelude::*;
 use regex::Regex;
 use std::io::Read;
@@ -96,10 +96,10 @@ impl Protocol {
                         }
                     }
                 } else {
-                    bail!("client closed connection")
+                    return Err(anyhow!("client closed connection"));
                 }
             } else {
-                bail!("data read error")
+                return Err(anyhow!("data read error"));
             }
         }
 
