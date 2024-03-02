@@ -163,7 +163,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
         .parse::<std::net::SocketAddr>()?;
 
     let reject_ratio = matches.value_of("ratio").unwrap().parse::<f32>()?;
-    if reject_ratio < 0f32 || reject_ratio > 1f32 {
+    if !(0f32..=1f32).contains(&reject_ratio) {
         return Err(anyhow!("reject ratio coefficient must be between 0 and 1"));
     }
 
@@ -177,7 +177,7 @@ fn run(matches: &ArgMatches) -> Result<(), Error> {
 
     let listener = tcp
         .reuse_address(true)?
-        .bind(&addr)?
+        .bind(addr)?
         .listen(LISTEN_BACKLOG)?;
 
     let pool = ThreadPool::new(workers);

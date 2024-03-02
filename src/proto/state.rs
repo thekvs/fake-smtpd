@@ -1,15 +1,10 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub enum State {
+    #[default]
     Invalid,
     Establish,
     Mail,
     Rcpt,
     Data,
     Done,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        State::Invalid
-    }
 }

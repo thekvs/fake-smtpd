@@ -80,7 +80,7 @@ impl Protocol {
         R: Read,
     {
         loop {
-            if let Ok(bytes_read) = reader.read(&mut *self.buffer) {
+            if let Ok(bytes_read) = reader.read(&mut self.buffer) {
                 if bytes_read > 0 {
                     let m = &mut self.message;
                     if m.len() + bytes_read > MAX_EMAIL_SIZE {
@@ -132,8 +132,8 @@ impl Protocol {
             "HELO" if self.state == State::Establish => self.helo(),
             "HELO" if self.state == State::Mail => self.helo(),
             "HELO" if self.state == State::Rcpt => self.helo(),
-            "MAIL" if self.state == State::Mail => self.mail(&command),
-            "RCPT" if self.state == State::Rcpt => self.rcpt(&command),
+            "MAIL" if self.state == State::Mail => self.mail(command),
+            "RCPT" if self.state == State::Rcpt => self.rcpt(command),
             "DATA" if self.state == State::Rcpt && !self.recipients.is_empty() => self.data(),
             _ => self.invalid_command(),
         }
